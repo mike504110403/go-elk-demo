@@ -1,0 +1,20 @@
+filebeat.inputs:
+  - type: filestream
+    enabled: true
+    paths:
+      - /Users/linminze/Documents/elk/log/demo/*.log # 您的 demo 日誌文件路徑
+
+# 配置 Kibana（便於可視化索引模板）
+setup.kibana:
+  host: "http://kibana:5601" # Kibana 的服務名稱或 IP 地址和端口
+
+# 配置 Elasticsearch 作為輸出
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"] # Elasticsearch 的服務名稱或 IP 地址和端口
+  #設定索引名稱
+  index: "mytest-logfile-%{+yyyy.MM.dd}"
+
+  # 設定索引樣板資訊
+setup.template.name: "mytest-logfile"
+setup.template.pattern: "mytest-logfile-*"
+setup.ilm.enabled: false

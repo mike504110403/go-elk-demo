@@ -1,0 +1,59 @@
+version: '3.7'
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.4
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+    networks:
+      - elk
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.4
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.17.4
+    container_name: logstash
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro  # 掛載 logstash 配置文件
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5044:5044"  # Logstash 接收 Filebeat 的 Beats 輸入
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:7.17.4
+    container_name: filebeat
+    volumes:
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro  # 掛載 filebeat 配置文件
+      - /Users/linminze/Documents/elk/log/demo/:/log/demo  # 映射日誌路徑到容器
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - LOGSTASH_HOSTS=http://logstash:5044
+    networks:
+      - elk
+    depends_on:
+      - logstash
+      - kibana
+
+networks:
+  elk:
+    driver: bridge
